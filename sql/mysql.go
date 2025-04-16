@@ -11,7 +11,7 @@ import (
 var DB *gorm.DB
 
 func ConnectMysql() {
-	viper.SetConfigFile("../global/mysqlconfig.yaml")
+	viper.SetConfigFile("C:/miaoshaSystem/global/mysqlconfig.yaml")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file, %s", err)
 	}

@@ -1,19 +1,23 @@
 package main
 
 import (
+	"log"
 	"miaoshaSystem/global"
 	"miaoshaSystem/sql"
 	"miaoshaSystem/web"
 )
 
 func main() {
-	go global.StartKafkaConsumer()
-	sql.Init()
 	sql.ConnectMysql()
+	sql.Init()
+
+	if sql.DB == nil {
+		log.Fatalf("MySQL database connection is not initialized")
+	}
+
 	global.CreateTable()
+
+	go global.StartKafkaConsumer()
+
 	web.Gin()
-
 }
-
-//TIP See GoLand help at <a href="https://www.jetbrains.com/help/go/">jetbrains.com/help/go/</a>.
-// Also, you can try interactive lessons for GoLand by selecting 'Help | Learn IDE Features' from the main menu.
