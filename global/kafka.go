@@ -52,7 +52,7 @@ func SendToKafka(productName, username string) error {
 func StartKafkaConsumer() {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers:  []string{"localhost:9092"},
-		Topic:    "seckill_requests",
+		Topic:    "seckillrequests",
 		GroupID:  "seckill_group",
 		MinBytes: 10e3, // 10KB
 		MaxBytes: 10e6, // 10MB

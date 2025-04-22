@@ -12,11 +12,20 @@ var ctx = context.Background()
 var R *redis.Client
 
 func Init() {
-	viper.SetConfigFile("../global/redisConfig.yaml")
+	viper.SetConfigFile("./global/redisConfig.yaml")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Error reading Redis config file: %v", err)
+	}
+
+	// 确保正确读取 Redis 配置
+	addr := viper.GetString("DB.addr")
+	password := viper.GetString("DB.password") // 确保密码字段正确读取
+	db := viper.GetInt("DB.DB")
+
 	R = redis.NewClient(&redis.Options{
-		Addr:     viper.GetString("DB.addr"),
-		Password: viper.GetString("DB.password"),
-		DB:       viper.GetInt("DB.DB"),
+		Addr:     addr,
+		Password: password, // 确保密码字段正确传递
+		DB:       db,
 	})
 
 	_, err := R.Ping(ctx).Result()

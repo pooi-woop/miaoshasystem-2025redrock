@@ -14,6 +14,14 @@ type MyCustomClaims struct {
 	Username           string `json:"username"` // 自定义字段，表示用户名
 	jwt.StandardClaims        // 嵌入标准的JWT声明字段
 }
+type RequestData struct {
+	Token   TokenData      `json:"token"`
+	Product global.Product `json:"product"`
+}
+
+type TokenData struct {
+	TokenString string `json:"tokenstring"`
+}
 
 func Register(c *gin.Context) {
 	var user global.User
@@ -28,6 +36,7 @@ func Register(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "user registered successfully"})
 }
+
 func Login(c *gin.Context) {
 	var user struct {
 		name string `json:"name"`
@@ -60,12 +69,49 @@ func Login(c *gin.Context) {
 
 var user global.User
 
-func Createmiaosha(c *gin.Context) {
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	var tokenString string
-	if err := c.ShouldBindJSON(&tokenString); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+/*
+	func Createmiaosha(c *gin.Context) {
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		var tokenString string
+		var requestData RequestData
+		if err := c.ShouldBindJSON(&RequestData{}); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+		tokenString = requestData.Token.TokenString
+		var mySigningKey = []byte("mysecretkey")
+
+		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return mySigningKey, nil
+		})
+
+		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
+
+			sql.DB.Where("name = ? ", claims.Username).First(&user)
+
+		} else {
+			fmt.Printf("Error validating token: %v\n", err)
+			return
+		}
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		var Product global.Product
+
+		Product = requestData.Product
+		if err := sql.DB.Create(&Product).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Product creation failed"})
+			return
+		}
 	}
+*/
+func Createmiaosha(c *gin.Context) {
+	var requestData RequestData
+	if err := c.ShouldBindJSON(&requestData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	tokenString := requestData.Token.TokenString
 	var mySigningKey = []byte("mysecretkey")
 
 	token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -75,22 +121,32 @@ func Createmiaosha(c *gin.Context) {
 		return mySigningKey, nil
 	})
 
+	if err != nil {
+		fmt.Printf("Error parsing token: %v\n", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	if token == nil {
+		fmt.Println("Token is nil")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
 	if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
+		var user global.User
+		sql.DB.Where("name = ?", claims.Username).First(&user)
 
-		sql.DB.Where("name = ? ", claims.Username).First(&user)
-
+		var product global.Product
+		product = requestData.Product
+		if err := sql.DB.Create(&product).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Product creation failed"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Product created successfully"})
 	} else {
 		fmt.Printf("Error validating token: %v\n", err)
-		return
-	}
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	var Product global.Product
-	if err := c.ShouldBindJSON(&Product); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := sql.DB.Create(&Product).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Product creation failed"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 		return
 	}
 }
