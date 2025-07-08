@@ -42,7 +42,7 @@ miaoshasystem-2025redrock/
 
 ### 环境准备
 
-1. **Node.js**：请确保已安装 Node.js 环境，推荐版本 [具体版本号]。
+1. **Node.js**：请确保已安装 Node.js 环境。
 2. **Kafka**：安装并启动 Kafka 服务，确保其正常运行。
 3. **Redis**：安装并启动 Redis 服务，用于订单存储。
 
